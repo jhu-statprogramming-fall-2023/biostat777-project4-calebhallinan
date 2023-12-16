@@ -11,7 +11,7 @@ runtime: shiny
 
 
 <style type="text/css">
-  p {font-size: 30px;}
+  p {font-size: 20px;}
 </style>
 
 
@@ -27,21 +27,6 @@ library(stringr)
 
 
 
-<!-- ```{r data, eval = FALSE} -->
-<!-- # Test if a "data" directory exists locally; if not, create it -->
-<!-- if(!dir.exists(here("data"))) { dir.create(here("data")) } -->
-
-<!-- # Save the data only once (not each time the R Markdown document is knit) -->
-<!-- if(!file.exists(here("data","olympics.csv"))) { -->
-<!--   url_csv <- 'https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2021/2021-07-27/olympics.csv' -->
-<!--   olympics <- read_csv(url_csv) -->
-
-<!--   # Save the olympics file to a csv object -->
-<!--   readr::write_csv(x = olympics, file = here("data","olympics.csv")) -->
-<!-- } -->
-<!-- ``` -->
-
-
 ```{r data, include=FALSE}
 # check data directory, make it
 if(!dir.exists(here("data"))) { 
@@ -54,6 +39,9 @@ if(!file.exists(here("data","league_data_2023_deidentified.csv"))) {
   print("Can't find data, downloading from internet now.")
   url_csv <- 'https://raw.githubusercontent.com/calebhallinan/fantasy_football_2023/main/data/league_data_2023_deidentified.csv'
   data <- read_csv(url_csv)
+  # get rid of column
+  data = data |> 
+    select(!"...1")
   # Save the olympics file to a csv object
   readr::write_csv(x = data, file = here("data","league_data_2023_deidentified.csv"))
 }
@@ -63,6 +51,9 @@ if(!file.exists(here("data","league_matchups_2023_deidentified.csv"))) {
   print("Can't find data, downloading from internet now.")
   url_csv <- 'https://raw.githubusercontent.com/calebhallinan/fantasy_football_2023/main/data/league_matchups_2023_deidentified.csv'
   data <- read_csv(url_csv)
+  # get rid of column
+  data = data |> 
+    select(!"...1")
   # Save the olympics file to a csv object
   readr::write_csv(x = data, file = here("data","league_matchups_2023_deidentified.csv"))
 }
@@ -92,7 +83,7 @@ knitr::include_graphics(here("data/fantasy_football.webp"))
 
 **Goals of this dashboard**
 
-Fantasy Football
+Recently I did an analysis on my Fantasy Football Season this year in 2023. Now, I want to add a more interactive component to the analysis to enhance the exploratory aspirations of my peers.
 
 
 
@@ -100,20 +91,32 @@ Fantasy Football
 
 **Data Source**
 
-XXXX
+For the data, I decided to use my football fantasy league of this year (2023). It turns out I am not the first person that wanted this data, so lucky for me a guy named Tim Bryan made a function to extract all the data from the website @espnfantasyfootballgithub. Click [here](https://github.com/tbryan2/espnfantasyfootball) to go to the specific repository I used from him. However, not everything worked the first try and I had to make some changes to his code to load in all the data without some errors. Feel free to check [my github repo](https://github.com/calebhallinan/fantasy_football_2023) for what I did as well as the data used. So, after some tweeks I was successfully able to read in and save everything I needed to a .csv file in my local directory which I then pushed to my github. Please find the data dictionary and interactive view of it on the "Data" tab.
+
 
 
 
 # The Data {data-icon="ion-android-list"}
 
-**About the data**
-
-This dashboard XXX
-
 ## Column {data-width=500}
 
-### Player Data
+### {data-height=200}
 
+::: {style="font-size: 80%;"}
+: Data Dictionary for Weekly Player Data
+
+| Variable Name        | Data Type |                                               Description |         Example          |
+|--------------------|:-----------------|-----------------:|:----------------:|
+| Week                 | dbl       |                       Week for each football games played | There are 17 Weeks total |
+| PlayerName           | chr       |                                   Name of football player |        Joe Burrow        |
+| PlayerScoreActual    | dbl       |         The actual points a player scored in a given week |           21.2           |
+| PlayerScoreProjected | dbl       | The projected points a player is to score in a given week |           19.0           |
+| PlayerRosterSlot     | chr       |      What position that player is playing in a given week |            WR            |
+| TeamName             | chr       |                           The team who has a given player |     Team Caleb (me!)     |
+:::
+
+
+### Weekly Player Data
 
 ```{r data_shown, echo=FALSE}
 # Make the DT table
@@ -128,7 +131,22 @@ DT::renderDataTable({
 
 ## Column {data-width=500}
 
-### Matchup Data 
+### {data-height=200}
+
+::: {style="font-size: 80%;"}
+: Data Dictionary for Weekly Matchup Data 
+
+| Variable Name | Data Type |                                   Description |         Example          |
+|--------------------|:-----------------|-----------------:|:----------------:|
+| Week          | dbl       |           Week for each football games played | There are 17 Weeks total |
+| Name1         | chr       |                                Name of team 1 |     Team Caleb (me!)     |
+| Score1        | dbl       | The total points Name1 scored in a given week |          102.7           |
+| Name2         | chr       |                                Name of team 2 |         Team BL          |
+| Score2        | dbl       | The total points Name2 scored in a given week |          121.3           |
+| Type          | factor    |                Regular season or Playoff game |         Regular          |
+:::
+
+### Weekly Matchup Data 
 
 ```{r matchup_shown, echo=FALSE}
 # Make the DT table
@@ -142,17 +160,18 @@ DT::renderDataTable({
 ```
 
 
-# Static {data-icon="ion-ios-americanfootball-outline"}
+# Weekly Stats {data-icon="ion-ios-americanfootball-outline" data-orientation=rows}
 
-## Column {data-width=650}
+## Column {data-height=500}
 
 
-### Chart A
+### Weekly Actual and Projected Scores by Team
 
 ```{r}
 # plot showing weekly projections to actual score
 # data
 data|>
+  filter(Week %in% c(0:14)) |> 
   # groupby team name and week
   group_by(TeamName, Week)|>
   # get rid of bench players as they don't count towards score
@@ -178,12 +197,9 @@ data|>
     x = "Week", 
     y = "Scores",
     caption = "Data Source: ESPN Fantasy Website",
-    subtitle = str_wrap("The plot reveals several interesting trends. Notably, Team BD and Team JN consistently maintain 
-                        a steady average of projected points per week. Meanwhile, teams such as myself and Team BL have
-                        experienced a mix of both impressive and lackluster weeks. On the other hand, Team GM has had an
-                        incredible season so far, consistently delivering outstanding performances week after week.
-                        Lastly, a few teams like Team RW and Team TP have notably underperformed in multiple weeks.",
-                        width = 87)) +
+    subtitle = str_wrap("The figure reveals several interesting trends regarding how a team scores compared to their
+                        projection.",
+                        width = 80)) +
   # add manual labels
   scale_linetype_manual(values = c("dashed", "solid"), labels = c("Projected", "Actual")) +
   # set y limit
@@ -195,18 +211,126 @@ data|>
   # use classic theme
   theme_classic() + 
   # edit text and legend
-  theme(axis.text.x = element_text(size = 12),
-  axis.text.y = element_text(size = 12),
-  plot.title = element_text(face= "bold", hjust = 0.5),
-  legend.position = c(.98, -0.12), legend.justification = c(1, 0)) +
-  scale_x_continuous(breaks = c(2, 4, 6, 8,10,12))
+  theme(axis.text.x = element_text(size = 10),
+  axis.text.y = element_text(size = 10),
+  plot.title = element_text(face= "bold", hjust = 0.5, size = 11),
+  legend.position = c(.98, 0), legend.justification = c(1, 0)) +
+  scale_x_continuous(breaks = c(2, 4, 6, 8,10,12, 14))
+```
+
+
+### Weekly Average Score Compared to You and Your Opponent's Score
+
+```{r}
+# Points against vs weekly average vs. opponents score
+# making new dataframe
+weekly_data = data|>
+  filter(Week %in% c(0:14)) |> 
+  # group by teamname and week
+  group_by(TeamName, Week)|>
+  # get rid of bench players
+  filter(PlayerRosterSlot != "Bench")|>
+  # get projected and weekly score for each team
+  summarize(weekly_score = sum(PlayerScoreActual),
+            projected_weekly_score = sum(PlayerScoreProjected)) 
+
+# get points against using an inner join between weekly data and matchups data
+# this is so I know who is playing who each week
+pts_against = inner_join(weekly_data, matchups, by = c("Week")) |> 
+  # had to only keep rows with the teamname of the week looked at
+  filter(TeamName == Name1 | TeamName == Name2)
+
+# add a column that is your opponent for that week
+pts_against$opponent = ifelse(pts_against$TeamName == pts_against$Name1, pts_against$Name2,pts_against$Name1)
+# get the opponents score for that week
+pts_against$opponent_score = ifelse(pts_against$TeamName == pts_against$Name1, pts_against$Score2,pts_against$Score1)
+
+# redfine dataframe
+pts_against = pts_against |> 
+  # select only handful of columns now that are needed for plot
+  select(TeamName, Week, weekly_score, projected_weekly_score, opponent, opponent_score) |> 
+  # group by week
+  group_by(Week) |> 
+  # get mean weekly average to plot as well
+  mutate(weekly_average = mean(weekly_score))
+
+# init plot
+ggplot(pts_against, aes(x = Week, color = TeamName)) +
+  # geom line for opponent score
+  geom_line(aes(y = opponent_score, linetype = "dashed"), color= "gray") +
+  # geom line for weekly average score
+  geom_line(aes(y = weekly_average, linetype = "dotted"), color= "black") + 
+  # geom line for your score
+  geom_line(aes(y = weekly_score, linetype = "solid")) + 
+  # wrap by team
+  facet_wrap(.~ TeamName) +
+  # set labs
+  labs(
+    title = "Weekly Average Score Compared to You and Your Opponent's Score", 
+    x = "Week", 
+    y = "Scores",
+    caption = "Data Source: ESPN Fantasy Website",
+    subtitle = str_wrap("There is a diverse range of teams, including consistent ones, teams with a lot of boom 
+                        potential, and teams with a lot of bust potential.", width = 80)) +
+  # set custom labels for linetype
+  scale_linetype_manual(values = c("dashed", "dotted", "solid"), labels = c("Opponents Score", "Weekly Average", "Your Score")) +
+  # set colors for teamnames
+  scale_colour_manual(values = paletteer_d("ggprism::colors", 12)) +
+  # get only legend for linetype
+  guides(color = "none", linetype = guide_legend(title = "Scores")) +
+  # theme classe
+  theme_classic() +
+  # edit text and legend position
+  theme(axis.text.x = element_text(size = 10),
+  axis.text.y = element_text(size = 10),
+  plot.title = element_text(face= "bold", hjust = 0.5, size = 11),
+  legend.position = c(.98, -0.05), legend.justification = c(1, 0)) +
+  scale_x_continuous(breaks = c(2, 4, 6, 8, 10,12,14))
+
 ```
 
 
 
-# Static {data-icon="ion-ios-americanfootball"}
+# Distribution of Scores {data-icon="ion-ios-americanfootball"}
 
-# Interactive {data-icon="ion-flag" data-orientation=rows}
+```{r, fig.align='center'}
+data |> 
+  # remove players
+  filter(!PlayerRosterSlot %in% c("Bench", "IR")) |> 
+  # groupby team
+  group_by(TeamName) |> 
+  # init plot
+  ggplot(aes(x = TeamName, y = PlayerScoreActual, fill = TeamName)) +
+  # geom violin
+  geom_violin() +
+  geom_boxplot(width=.1, color="white",outlier.shape = NA) +
+   # add colors
+  scale_fill_manual(values = paletteer_d("ggprism::colors", 12)) +
+  # change to linedraw
+  theme_linedraw() + 
+  # add theme
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
+    text = element_text(size = 12),
+    plot.title = element_text(face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 11)) +
+  # add labels
+  labs(
+    x = "Team Name",
+    y = "Player's Scores (All Weeks Possible)",
+    title = "Distribution of Player Scores for Each Team",
+    fill = "Team Name",
+    caption = "Data Source: ESPN Fantasy Website",
+    subtitle = str_wrap("The violin plots display the distribution of all player scores for each team. The boxplots 
+    within expresses the median, interquartile range, and estimated min/max based on the interquartile range.",
+    width = 80)) +
+  # get rid of legend
+  guides(fill = "none", color = "none")
+  
+```
+
+
+
+# Scores Over Time {data-icon="ion-flag" data-orientation=rows}
 
 ## {data-height=1000}
 
@@ -218,7 +342,7 @@ position_order <- c("K", "D/ST","TE", "FLEX","WR","RB", "QB")
 renderPlot({ 
 # get data
 data |> 
-  filter(!Week %in% c(as.numeric(input$Week):17)) |> 
+  filter(Week %in% c(0:as.numeric(input$Week))) |> 
   # group by teamname and week
   group_by(TeamName, PlayerRosterSlot) |> 
   # filter IR players out
@@ -251,8 +375,10 @@ data |>
     plot.title = element_text(face = "bold", hjust = 0.5, size = 20)) +
   # add colors to each position
   scale_fill_manual(values = paletteer_d("NatParksPalettes::GrandCanyon", 7)) +
-    ylim(0,450)
+    ylim(0,500)
 })
+
+
 
 ```
 
