@@ -100,10 +100,9 @@ For the data, I decided to use my football fantasy league of this year (2023). I
 
 ## Column {data-width=500}
 
-### {data-height=200}
+### Data Dictionary for Weekly Player Data {data-height=200}
 
 ::: {style="font-size: 80%;"}
-: Data Dictionary for Weekly Player Data
 
 | Variable Name        | Data Type |                                               Description |         Example          |
 |--------------------|:-----------------|-----------------:|:----------------:|
@@ -131,10 +130,9 @@ DT::renderDataTable({
 
 ## Column {data-width=500}
 
-### {data-height=200}
+### Data Dictionary for Weekly Matchup Data {data-height=200}
 
 ::: {style="font-size: 80%;"}
-: Data Dictionary for Weekly Matchup Data 
 
 | Variable Name | Data Type |                                   Description |         Example          |
 |--------------------|:-----------------|-----------------:|:----------------:|
@@ -378,8 +376,6 @@ data |>
     ylim(0,500)
 })
 
-
-
 ```
 
 
@@ -387,14 +383,157 @@ data |>
 
 ```{r slider input, message = FALSE, warning = FALSE}
 sliderInput("Week", label = "Number of Weeks to Include:",
-            min = 1, max = 14, value = 1, step = 1, width = "100%")
+            min = 1, max = 14, value = 14, step = 1, width = "100%")
 ```
 
 
 
 
-# Interactive {data-icon="fa-medal"}
+# Best/Worst Performing Players {data-icon="fa-medal" data-orientation=rows}
+
+## {data-height=1500}
+
+### {data-height="100" data-orientation=columns}
+
+```{r, fig.height=8, fig.width=9, fig.align='center'}
+# who has outperformed and underperformed the most
+data_players = data |> 
+  mutate(playerscoredifference = PlayerScoreActual - PlayerScoreProjected) |> 
+  group_by(PlayerName, PlayerRosterSlot) |> 
+  summarise(playerscoredifference = sum(playerscoredifference))
+
+# Assuming your data is in a tibble called 'df'
+data_players = data_players %>%
+  # Sum the playerscoredifference for each player regardless of their PlayerRosterSlot
+  group_by(PlayerName) %>%
+  summarise(playerscoredifference = sum(playerscoredifference)) %>%
+  # Now ungroup to remove the grouping
+  ungroup() %>%
+  # Join with the original data to get the PlayerRosterSlot
+  # Make sure to filter out the 'Bench', 'FLEX', or 'IR' from the original data first
+  right_join(
+    data_players %>%
+      filter(!PlayerRosterSlot %in% c('Bench', 'FLEX', 'IR')),
+    by = "PlayerName"
+  ) %>%
+  # Remove duplicate PlayerName entries keeping the first occurrence
+  distinct(PlayerName, .keep_all = TRUE)
+
+renderPlot({ 
+  
+data_players_final_2 = data_players |> 
+  filter(PlayerRosterSlot %in% c(input$position)) |> 
+  arrange(desc(playerscoredifference.x)) |>  
+  tail(n=10)
+
+  # init plot
+ggplot(data = data_players_final_2, aes(x = playerscoredifference.x, y = fct_reorder(PlayerName,
+                                        desc(playerscoredifference.x)), fill = PlayerName)) +
+  # columns
+  geom_col() +
+  # xlim
+  xlim(min(data_players$playerscoredifference.x), max(data_players$playerscoredifference.x)) +
+  # add labels
+  labs(
+    x = "Difference (Actual-Projected)",
+    y= "Player Name",
+    title = "Worst Total Difference",
+    caption =  "Data Source: ESPN Fantasy Website",
+    subtitle = str_wrap("Bars are in descending order of total difference between a player's actual score minus their
+    projected store for all weeks combined.", width= 110)) +
+   # add colors
+  scale_fill_manual(values = paletteer_d("ggprism::colors", 10)) +
+  # remove legend
+  guides(fill = "none") +
+  #theme
+  theme_linedraw() +
+    # edit text
+  theme(axis.text.x = element_text(size = 14),
+  axis.text.y = element_text(size = 14),
+  plot.title = element_text(face= "bold", hjust = 0.5, size = 20),
+  text = element_text(size=16))
+})
+```
+
+
+### {data-height="100" data-orientation=columns}
+
+```{r, fig.height=8, fig.width=9, fig.align='center'}
+
+# who has outperformed and underperformed the most
+data_players = data |> 
+  mutate(playerscoredifference = PlayerScoreActual - PlayerScoreProjected) |> 
+  group_by(PlayerName, PlayerRosterSlot) |> 
+  summarise(playerscoredifference = sum(playerscoredifference))
+
+# Assuming your data is in a tibble called 'df'
+data_players = data_players %>%
+  # Sum the playerscoredifference for each player regardless of their PlayerRosterSlot
+  group_by(PlayerName) %>%
+  summarise(playerscoredifference = sum(playerscoredifference)) %>%
+  # Now ungroup to remove the grouping
+  ungroup() %>%
+  # Join with the original data to get the PlayerRosterSlot
+  # Make sure to filter out the 'Bench', 'FLEX', or 'IR' from the original data first
+  right_join(
+    data_players %>%
+      filter(!PlayerRosterSlot %in% c('Bench', 'FLEX', 'IR')),
+    by = "PlayerName"
+  ) %>%
+  # Remove duplicate PlayerName entries keeping the first occurrence
+  distinct(PlayerName, .keep_all = TRUE)
+
+
+renderPlot({ 
+  
+data_players_final = data_players |> 
+  filter(PlayerRosterSlot %in% c(input$position)) |> 
+  arrange(desc(playerscoredifference.x)) |>  
+  head(n=10)
+
+ggplot(data = data_players_final, aes(x = playerscoredifference.x, y = fct_reorder(PlayerName, playerscoredifference.x),
+                                      fill = PlayerName)) +
+  geom_col() +
+  xlim(min(data_players$playerscoredifference.x), max(data_players$playerscoredifference.x)) +
+    # add labels
+  labs(
+    x = "Difference (Actual-Projected)",
+    y= "Player Name",
+    title = " Best Total Difference",
+    caption =  "Data Source: ESPN Fantasy Website",
+    subtitle = str_wrap("Bars are in descending order of total difference between a player's actual score minus their
+    projected store for all weeks combined.", width= 110)) +
+   # add colors
+  scale_fill_manual(values = paletteer_d("ggprism::colors", 10)) +
+  # remove legend
+  guides(fill = "none") +
+  #theme
+  theme_linedraw() +
+    # edit text
+  theme(axis.text.x = element_text(size = 14),
+  axis.text.y = element_text(size = 14),
+  plot.title = element_text(face= "bold", hjust = 0.5, size = 20),
+  text = element_text(size=16))
+})
+```
+
+##
+
+### 
+
+```{r winter input, message = FALSE, warning = FALSE, fig.align='center'}
+selectInput("position", "Position Selection:",
+               choices = sort(unique(data_players$PlayerRosterSlot)),
+               selected = "QB",
+               multiple = TRUE)
+
+```
+
 
 # Analysis {data-icon="ion-ios-pie"}
+
+
+
+
 
 
