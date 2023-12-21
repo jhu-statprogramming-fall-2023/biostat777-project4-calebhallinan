@@ -16,8 +16,8 @@ runtime: shiny
 
 
 ```{r setup, include=FALSE, message = FALSE, warning = FALSE}
-library(flexdashboard)
 # Read in my package ahead of time
+library(flexdashboard)
 library(tidyverse)
 library(here)
 library(ggplot2)
@@ -65,6 +65,7 @@ matchups = readr::read_csv("data/league_matchups_2023_deidentified.csv")
 ```
 
 
+
 # About {data-icon="ion-android-home"}
 
 ## Column {data-width=500}
@@ -78,20 +79,21 @@ knitr::include_graphics(here("data/fantasy_football.webp"))
 
 ## Column {data-width=500}
 
-
 ### 
 
 **Goals of this dashboard**
 
-Recently I did an analysis on my Fantasy Football Season this year in 2023. Now, I want to add a more interactive component to the analysis to enhance the exploratory aspirations of my peers.
+Recently I did an analysis on my Fantasy Football Season this year (2023). Now, I want to add a more interactive component to the analysis to enhance the exploratory aspirations of my peers.
 
-
+::: {style="text-align: center;"}
+<iframe width="560" height="315" src="https://www.youtube.com/embed/sAi0eUkaiZk?si=zHYp0xV5AWnVchdR" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+:::
 
 ### 
 
 **Data Source**
 
-For the data, I decided to use my football fantasy league of this year (2023). It turns out I am not the first person that wanted this data, so lucky for me a guy named Tim Bryan made a function to extract all the data from the website @espnfantasyfootballgithub. Click [here](https://github.com/tbryan2/espnfantasyfootball) to go to the specific repository I used from him. However, not everything worked the first try and I had to make some changes to his code to load in all the data without some errors. Feel free to check [my github repo](https://github.com/calebhallinan/fantasy_football_2023) for what I did as well as the data used. So, after some tweeks I was successfully able to read in and save everything I needed to a .csv file in my local directory which I then pushed to my github. Please find the data dictionary and interactive view of it on the "Data" tab.
+For the data, I used my football fantasy league of this year (2023). It turns out I am not the first person that wanted this data, so lucky for me a guy named Tim Bryan made a function to extract all the data from the [ESPN website](https://github.com/tbryan2/espnfantasyfootball). Click [here](https://github.com/tbryan2/espnfantasyfootball) to go to the specific repository I used from him. However, not everything worked the first try and I had to make some changes to his code to load in all the data without some errors. Feel free to check [my github repo](https://github.com/calebhallinan/fantasy_football_2023) for what I did as well as the data used. So, after some tweeks I was successfully able to read in and save everything I needed to a .csv file in my local directory which I then pushed to my github. Please find the data dictionary and interactive view of it at the "Data" tab.
 
 
 
@@ -114,8 +116,6 @@ For the data, I decided to use my football fantasy league of this year (2023). I
 | TeamName             | chr       |                           The team who has a given player |     Team Caleb (me!)     |
 :::
 
-
-
 ### Weekly Player Data
 
 ```{r data_shown, echo=FALSE}
@@ -130,10 +130,7 @@ DT::renderDataTable({
 ```
 
 
-
 ## Column {data-width=500}
-
-
 
 ### Data Dictionary for Weekly Matchup Data {data-height=200}
 
@@ -148,8 +145,6 @@ DT::renderDataTable({
 | Score2        | dbl       | The total points Name2 scored in a given week |          121.3           |
 | Type          | factor    |                Regular season or Playoff game |         Regular          |
 :::
-
-
 
 ### Weekly Matchup Data 
 
@@ -168,11 +163,7 @@ DT::renderDataTable({
 
 # Weekly Stats {data-icon="ion-ios-americanfootball-outline" data-orientation=rows}
 
-
-
 ## Column {data-height=500}
-
-
 
 ### Weekly Actual and Projected Scores by Team
 
@@ -226,8 +217,6 @@ data|>
   legend.position = c(.98, 0), legend.justification = c(1, 0)) +
   scale_x_continuous(breaks = c(2, 4, 6, 8,10,12, 14))
 ```
-
-
 
 ### Weekly Average Score Compared to You and Your Opponent's Score
 
@@ -301,7 +290,11 @@ ggplot(pts_against, aes(x = Week, color = TeamName)) +
 
 
 
-# Distribution of Scores {data-icon="ion-ios-americanfootball"}
+# Distributions of Cool Stats {data-icon="ion-ios-americanfootball"} 
+
+## Column {.tabset}
+
+### Distribution of Player Scores for Each Team
 
 ```{r, fig.align='center'}
 data |> 
@@ -338,11 +331,57 @@ data |>
   
 ```
 
+### Distribution of Total Loss Differential
+
+```{r, fig.align='center'}
+# graph for worst loss differential
+
+# grab difference of scores
+matchups_diff = matchups[1:76,] |> 
+  # find difference of scores
+    mutate(Difference = Score1 - Score2)
+
+# get team with lower score
+matchups_diff$LowerScoreName = ifelse(matchups_diff$Difference < 0, matchups_diff$Name1, matchups_diff$Name2)
+
+# get abs of difference and plot
+matchups_diff |> 
+  # absolute the difference 
+  mutate(Difference = abs(Difference)) |> 
+  # group by team
+  group_by(LowerScoreName) |> 
+  # get sum of differences for each team
+  summarise(sum_diff = sum(Difference)) |> 
+  # remove weird NA
+  na.omit() |> 
+  # init plot
+  ggplot(aes(x = LowerScoreName, y = sum_diff, fill = LowerScoreName)) +
+  # geom bar for each team
+  geom_col(position = "dodge") +
+  # add colors
+  scale_fill_manual(values = paletteer_d("ggprism::colors", 12)) +
+  # change to linedraw
+  theme_linedraw() + 
+  # add theme
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
+    text = element_text(size = 12),
+    plot.title = element_text(face = "bold", hjust = 0.5)) +
+  # add labels
+  labs(
+    x = "Team Name",
+    y = "Total Loss Differential",
+    title = "Total Loss Differential For Each Team",
+    fill = "Team Name",
+    caption = "Data Source: ESPN Fantasy Website",
+    subtitle = str_wrap("The barplot expresses a sum of how much a team has lost by for all weeks they 
+                        have lost this season.", width = 80)) +
+  # get rid of legend
+  guides(fill = "none")
+```
+
 
 
 # Scores Over Time {data-icon="ion-flag" data-orientation=rows}
-
-
 
 ## {data-height=1000}
 
@@ -378,7 +417,7 @@ data |>
       fill = "Positions",
       title = "Total Score of Each Position For All Teams",
       caption = "Data Source: ESPN Fantasy Website",
-      subtitle = "Expresses which position scores the most points for each team and how many thoughout the season.") +
+      subtitle = "Expresses which position scores the most points for each team thoughout the season.") +
   # change theme to linedraw
   theme_linedraw() + 
   # edit text
@@ -392,8 +431,6 @@ data |>
 
 ```
 
-
-
 ## Column {.sidebar} {data-height=200}
 
 ```{r slider input, message = FALSE, warning = FALSE}
@@ -405,11 +442,7 @@ sliderInput("Week", label = "Number of Weeks to Include:",
 
 # Best/Worst Performing Players {data-icon="fa-medal" data-orientation=rows}
 
-
-
 ## {data-height=1500}
-
-
 
 ### {data-height="100" data-orientation=columns}
 
@@ -435,7 +468,10 @@ data_players = data_players %>%
     by = "PlayerName"
   ) %>%
   # Remove duplicate PlayerName entries keeping the first occurrence
-  distinct(PlayerName, .keep_all = TRUE)
+  distinct(PlayerName, .keep_all = TRUE) |> 
+  # add their position to their name
+  mutate(PlayerNamePosition = paste0(PlayerName, " (", PlayerRosterSlot, ")"))
+
 
 renderPlot({ 
   
@@ -445,8 +481,8 @@ data_players_final_2 = data_players |>
   tail(n=10)
 
   # init plot
-ggplot(data = data_players_final_2, aes(x = playerscoredifference.x, y = fct_reorder(PlayerName,
-                                        desc(playerscoredifference.x)), fill = PlayerName)) +
+ggplot(data = data_players_final_2, aes(x = playerscoredifference.x, y = fct_reorder(PlayerNamePosition,
+                                        desc(playerscoredifference.x)), fill = PlayerNamePosition)) +
   # columns
   geom_col() +
   # xlim
@@ -458,7 +494,7 @@ ggplot(data = data_players_final_2, aes(x = playerscoredifference.x, y = fct_reo
     title = "Worst Total Difference",
     caption =  "Data Source: ESPN Fantasy Website",
     subtitle = str_wrap("Bars are in descending order of total difference between a player's actual score minus their
-    projected store for all weeks combined.", width= 110)) +
+    projected store for all weeks combined.", width= 80)) +
    # add colors
   scale_fill_manual(values = paletteer_d("ggprism::colors", 10)) +
   # remove legend
@@ -472,8 +508,6 @@ ggplot(data = data_players_final_2, aes(x = playerscoredifference.x, y = fct_reo
   text = element_text(size=16))
 })
 ```
-
-
 
 ### {data-height="100" data-orientation=columns}
 
@@ -500,7 +534,9 @@ data_players = data_players %>%
     by = "PlayerName"
   ) %>%
   # Remove duplicate PlayerName entries keeping the first occurrence
-  distinct(PlayerName, .keep_all = TRUE)
+  distinct(PlayerName, .keep_all = TRUE) |> 
+  # add their position to their name
+  mutate(PlayerNamePosition = paste0(PlayerName, " (", PlayerRosterSlot, ")"))
 
 
 renderPlot({ 
@@ -510,8 +546,7 @@ data_players_final = data_players |>
   arrange(desc(playerscoredifference.x)) |>  
   head(n=10)
 
-ggplot(data = data_players_final, aes(x = playerscoredifference.x, y = fct_reorder(PlayerName, playerscoredifference.x),
-                                      fill = PlayerName)) +
+ggplot(data = data_players_final, aes(x = playerscoredifference.x, y = fct_reorder(PlayerNamePosition, playerscoredifference.x),fill = PlayerNamePosition)) +
   geom_col() +
   xlim(min(data_players$playerscoredifference.x), max(data_players$playerscoredifference.x)) +
     # add labels
@@ -521,7 +556,7 @@ ggplot(data = data_players_final, aes(x = playerscoredifference.x, y = fct_reord
     title = " Best Total Difference",
     caption =  "Data Source: ESPN Fantasy Website",
     subtitle = str_wrap("Bars are in descending order of total difference between a player's actual score minus their
-    projected store for all weeks combined.", width= 110)) +
+    projected store for all weeks combined.", width= 80)) +
    # add colors
   scale_fill_manual(values = paletteer_d("ggprism::colors", 10)) +
   # remove legend
@@ -536,13 +571,9 @@ ggplot(data = data_players_final, aes(x = playerscoredifference.x, y = fct_reord
 })
 ```
 
+## Column
 
-
-##
-
-
-
-### 
+###
 
 ```{r winter input, message = FALSE, warning = FALSE, fig.align='center'}
 selectInput("position", "Position Selection:",
@@ -553,10 +584,462 @@ selectInput("position", "Position Selection:",
 ```
 
 
+
 # Analysis {data-icon="ion-ios-pie"}
 
+**NOTE: This looks MUCH better on my [personal website](https://calebhallinan.github.io/blog/2023-11-05-fantasy-football-analysis/), so feel free to head there instead :)**
 
-<!-- Will add analysis of fantasy football here  -->
+**Brief Introduction**
+
+My friends and I are [always]{.underline} talking about fantasy football. You may read that and think I'm kidding, but if you look at my phone screen time since football season started the top two are 1. The ESPN Fantasy App and 2. The IPhone Messages App because I am messaging my friends about fantasy. So no, I am not kidding. It's probably not worth it because I won't win this year anyways, but eh - it's fun and I enjoy it :)
+
+<!-- football image -->
+
+::: {style="text-align: center;"}
+![[ESPN Fantasy App Logo](https://espnpressroom.com/us/press-releases/2016/08/espn-fantasy-footballs-21st-season-comprehensive-coverage-ever/)](data/fantasy_football.webp){width="400"}
+:::
+
+::: callout-important
+Fantasy Football can and will likely become addicting if you play, so fair warning to those who have never played before and are interested 😅
+:::
+
+<!-- Read in Packages -->
+
+```{r}
+# Read in my package ahead of time
+library(tidyverse)
+library(here)
+library(ggplot2)
+library(paletteer)
+library(stringr)
+```
+
+**The Questions and Data**
+
+With this being said, I wanted to do a more in depth analysis of some fantasy football statistics so far this year. I did some research and found two awesome blog posts that helped get me started on reading in data and interesting graphs to make @jman4190medium @stimsonspage. The goal was to answer questions like:
+
+1.  How accurate are your weekly projections?
+2.  What teams are under or over performing each week compared to others?
+3.  Where do most of the points come from for each team?
+
+My hope is to add more to this analysis as time goes on, so let me know if you have a question you are interested in!
+
+I have two main audiences I want this to reach:
+
+1.  My fantasy football friends
+2.  Others who do fantasy football and might find my analysis interesting
+
+For those of you who may not understand fantasy football, I won't go into much depth on it so check out this [short post by ESPN](https://www.espn.com/fantasy/football/story/_/id/34389554/fantasy-football-beginners-how-play-fantasy-football-2022) that explains it @espn-fantasy-football-2022.
+
+So for the data, I decided to use my football fantasy league of this year (2023). I could have done last year for a more complete analysis of how I didn't win, but this give my league things to talk about now and I can continually update the analysis each week (which seemed pretty cool to me). It turns out I am not the first person that wanted this data, so lucky for me a guy named Tim Bryan made a function to extract all the data from the website @espnfantasyfootballgithub. Click [here](https://github.com/tbryan2/espnfantasyfootball) to go to the specific repository I used from him.
+
+However, not everything worked the first try and I had to make some changes to his code to load in all the data without some errors. Feel free to check [my github repo](https://github.com/calebhallinan/fantasy_football_2023) for what I did as well as the data used. So, after some tweeks I was successfully able to read in and save everything I needed to a .csv file in my local directory which I then pushed to my github. Here is a data dictionary for the variables I was using with two different datasets:
+
+::: {style="font-size: 80%;"}
+| Variable Name        | Data Type |                                               Description |         Example          |
+|--------------------|:-----------------|-----------------:|:----------------:|
+| Week                 | dbl       |                       Week for each football games played | There are 17 Weeks total |
+| PlayerName           | chr       |                                   Name of football player |        Joe Burrow        |
+| PlayerScoreActual    | dbl       |         The actual points a player scored in a given week |           21.2           |
+| PlayerScoreProjected | dbl       | The projected points a player is to score in a given week |           19.0           |
+| PlayerRosterSlot     | chr       |      What position that player is playing in a given week |            WR            |
+| TeamName             | chr       |                           The team who has a given player |     Team Caleb (me!)     |
+
+: Data Dictionary for Scoring Variables
+
+| Variable Name | Data Type |                                   Description |         Example          |
+|--------------------|:-----------------|-----------------:|:----------------:|
+| Week          | dbl       |           Week for each football games played | There are 17 Weeks total |
+| Name1         | chr       |                                Name of team 1 |     Team Caleb (me!)     |
+| Score1        | dbl       | The total points Name1 scored in a given week |          102.7           |
+| Name2         | chr       |                                Name of team 2 |         Team BL          |
+| Score2        | dbl       | The total points Name2 scored in a given week |          121.3           |
+| Type          | factor    |                Regular season or Playoff game |         Regular          |
+
+: Data Dictionary for Weekly Match-up Variables
+:::
+
+::: callout-note
+Here is also a brief dictionary for common abbreviations you will see throughout this blog and in fantasy football:
+
+K = Kicker
+
+D/ST = Defense and Special Teams
+
+TE = Tight End
+
+WR = Wide Receiver
+
+RB = Running Back
+
+QB = Quarterback
+
+FLEX = Can be any position listed above
+:::
+
+Finally, I de-identified all the data but mine to where my friends would know who they are but no one else can identify them. This data is coming from the ESPN Fantasy Website so thank you to them for allowing me to extract it @espnfantasyfootball!
+
+So now, let's go ahead and read in the data I obtained using python (on my github). I do some pre-processing to remove weeks that haven't been played yet and other columns I don't need.
+
+<!-- Read in data -->
+
+```{r}
+# read in data
+data = read_csv("data/league_data_2023_deidentified.csv")
+
+# read in matchup data
+matchups = read_csv("data/league_matchups_2023_deidentified.csv")
+# get rid of some of the data as it duplicated it
+matchups = matchups[1:65,]
+
+# NOTE: edit WEEK based on current week
+data = data |> 
+  # get rid of weeks 9-17
+  filter(!Week %in% c(14:17)) |> 
+  # drop playerfantasyteam
+  select(-PlayerFantasyTeam)
+
+matchups = matchups |> 
+  # get rid of weeks 9-17
+  filter(!Week %in% c(14:17))
+```
+
+**The Analysis**
+
+The first question I wanted to look at was one I was interested coming into this analysis. How accurate are your weekly projections? To me, it seems like they never are haha - I could be projected super high one week and then score 20 points below or vice versa any given week. So let's look at the plot below:
+
+```{r, fig.align='center'}
+# plot showing weekly projections to actual score
+# data
+data|>
+  # groupby team name and week
+  group_by(TeamName, Week)|>
+  # get rid of bench players as they don't count towards score
+  filter(PlayerRosterSlot != "Bench")|>
+  # get the sum of your actual player roster and projected 
+  summarize(weekly_score = sum(PlayerScoreActual),
+            projected_weekly_score = sum(PlayerScoreProjected))|>
+  # begin plotting
+  ggplot(aes(x = Week, y = weekly_score, color = TeamName)) +
+  # add solid line for actual total
+  geom_line(aes(linetype = "solid", show.legend = FALSE)) +
+  # dashed line for projected total
+  geom_line(aes(y = projected_weekly_score, linetype = "dashed")) +
+  # add point to easily see week
+  geom_point(aes(y=weekly_score), size=1) +
+  # average projected
+  # geom_hline(aes(yintercept=mean(projected_weekly_score), linetype = "dotted", color="red")) +
+  # facet wrap by teamname
+  facet_wrap(~ TeamName) +
+  # add labels
+  labs(
+    title = "Weekly Actual and Projected Scores by Team", 
+    x = "Week", 
+    y = "Scores",
+    caption = "Data Source: ESPN Fantasy Website",
+    subtitle = str_wrap("The plot reveals several interesting trends. Notably, Team BD and Team JN consistently maintain 
+                        a steady average of projected points per week. Meanwhile, teams such as myself and Team BL have
+                        experienced a mix of both impressive and lackluster weeks. On the other hand, Team GM has had an
+                        incredible season so far, consistently delivering outstanding performances week after week.
+                        Lastly, a few teams like Team RW and Team TP have notably underperformed in multiple weeks.",
+                        width = 87)) +
+  # add manual labels
+  scale_linetype_manual(values = c("dashed", "solid"), labels = c("Projected", "Actual")) +
+  # set y limit
+  ylim(50, 180) +
+  # set colors for teams
+  scale_colour_manual(values = paletteer_d("ggprism::colors", 12)) +
+  # get rid of color legend but use linetype legend
+  guides(color = "none", linetype = guide_legend(title = "Scores")) +
+  # use classic theme
+  theme_classic() +
+  # edit text and legend
+  theme(axis.text.x = element_text(size = 12),
+  axis.text.y = element_text(size = 12),
+  plot.title = element_text(face= "bold", hjust = 0.5),
+  legend.position = c(.98, -0.12), legend.justification = c(1, 0)) +
+  scale_x_continuous(breaks = c(2, 4, 6, 8,10,12))
+
+```
+
+Well, I think I was right in thinking they aren't ideal but honestly a couple teams seem to follow it fairly well. Team BD is pretty consistent across the board so far, as with Team JN. However, there are some teams with large outlier weeks like Team GM who has had some insane weeks or Team TP who has had some not so great weeks. Overall, it is pretty interesting to see the actual points scored that week compared to the projected!
+
+The next graph is probably my favorite for various reasons and was suggested by one of my friends in this league. What we wanted to look at was how your opponents score that week compared to the weekly average score, or in other words how much your opponent "went off" or "did horribly" compared to others. I then decided to go one step further to plot your score for that week as well, and you can see some really interesting and funny trends in this plot below.
+
+```{r, fig.align='center'}
+# Points against vs weekly average vs. opponents score
+# making new dataframe
+weekly_data = data|>
+  # group by teamname and week
+  group_by(TeamName, Week)|>
+  # get rid of bench players
+  filter(PlayerRosterSlot != "Bench")|>
+  # get projected and weekly score for each team
+  summarize(weekly_score = sum(PlayerScoreActual),
+            projected_weekly_score = sum(PlayerScoreProjected)) 
+
+# get points against using an inner join between weekly data and matchups data
+# this is so I know who is playing who each week
+pts_against = inner_join(weekly_data, matchups, by = c("Week")) |> 
+  # had to only keep rows with the teamname of the week looked at
+  filter(TeamName == Name1 | TeamName == Name2)
+
+# add a column that is your opponent for that week
+pts_against$opponent = ifelse(pts_against$TeamName == pts_against$Name1, pts_against$Name2,pts_against$Name1)
+# get the opponents score for that week
+pts_against$opponent_score = ifelse(pts_against$TeamName == pts_against$Name1, pts_against$Score2,pts_against$Score1)
+
+# redfine dataframe
+pts_against = pts_against |> 
+  # select only handful of columns now that are needed for plot
+  select(TeamName, Week, weekly_score, projected_weekly_score, opponent, opponent_score) |> 
+  # group by week
+  group_by(Week) |> 
+  # get mean weekly average to plot as well
+  mutate(weekly_average = mean(weekly_score))
+
+# init plot
+ggplot(pts_against, aes(x = Week, color = TeamName)) +
+  # geom line for opponent score
+  geom_line(aes(y = opponent_score, linetype = "dashed"), color= "gray") +
+  # geom line for weekly average score
+  geom_line(aes(y = weekly_average, linetype = "dotted"), color= "black") + 
+  # geom line for your score
+  geom_line(aes(y = weekly_score, linetype = "solid")) + 
+  # wrap by team
+  facet_wrap(.~ TeamName) +
+  # set labs
+  labs(
+    title = "Weekly Average Score Compared to You and Your Opponent's Score", 
+    x = "Week", 
+    y = "Scores",
+    caption = "Data Source: ESPN Fantasy Website",
+    subtitle = str_wrap("There is a diverse range of teams, including consistent ones, teams with a lot of boom 
+                        potential, and teams with a lot of bust potential. Notable outliers are Team GM, who 
+                        frequently scores high, and Team TP, who frequently scores low. Generally, teams tend to 
+                        score close to the average points per week, with a few teams deviating from this trend each
+                        week.", width = 90)) +
+  # set custom labels for linetype
+  scale_linetype_manual(values = c("dashed", "dotted", "solid"), labels = c("Opponents Score", "Weekly Average", "Your Score")) +
+  # set colors for teamnames
+  scale_colour_manual(values = paletteer_d("ggprism::colors", 12)) +
+  # get only legend for linetype
+  guides(color = "none", linetype = guide_legend(title = "Scores")) +
+  # theme classe
+  theme_classic() +
+  # edit text and legend position
+  theme(axis.text.x = element_text(size = 12),
+  axis.text.y = element_text(size = 12),
+  plot.title = element_text(face= "bold", hjust = 0.5),
+  legend.position = c(.98, -.16), legend.justification = c(1, 0)) +
+  scale_x_continuous(breaks = c(2, 4, 6, 8, 10,12))
+
+
+```
+
+We see two teams, Team BD and JN, are both pretty "average" teams. However, what's interesting about that is they are currently at the top of the league in wins (Through Week 9) therefore implying consistency may be the best in winning fantasy football. Team RW has fairly low scoring weeks, besides their one breakout week 5 against Team TP. Interestingly, Team TP started off strong but had a tough middle of the season and unlucky past two weeks getting just barely beat by their opponent.
+
+A lot of these trends can be explained more by BYE weeks (weeks that a NFL team has off), injuries, or injuries that affect other players (for example, QB Matt Stafford was out Week 9 and so WR Puka Nacua didn't even score 5 points when he was projected 12). I think that is certainly the case for Team TP who has had a tough go at injuries this season. I personally have had a decent amount, like the number one overall pick Justin Jefferson being on IR and missing the past 4 weeks (note the drop in my score four weeks ago) 🙃.
+
+Next, I wanted to take a look at what position performs the best for each team and where the majority of their points are coming from. Take a look below!
+
+```{r, message=FALSE, fig.align='center'}
+# Cumulative points over time and show distribution of each place
+
+# Define the desired order of the positions
+position_order <- c("K", "D/ST","TE", "FLEX","WR","RB", "QB")
+
+# get data
+data |> 
+  # group by teamname and week
+  group_by(TeamName, PlayerRosterSlot) |> 
+  # filter IR players out
+  filter(PlayerRosterSlot != "IR") |>
+  # gilter bench players out
+  filter(PlayerRosterSlot != "Bench") |>
+  # get sum of weekly score
+  summarise(total_score_per_position = sum(PlayerScoreActual))  |> 
+  # factor rosterslot
+  mutate(PlayerRosterSlot = factor(PlayerRosterSlot, levels = position_order)) |> 
+  # plot in ggplot
+  ggplot(aes(x = TeamName, y = total_score_per_position, fill = PlayerRosterSlot)) +    
+  # geom bar of all positions
+  geom_bar(position="dodge", stat="identity") +
+    # change colors and add percent to y axis
+    # scale_colour_manual(values = paletteer_d("ggprism::colors", 12)) +
+  # labels
+  labs(
+      x = "Team Name",
+      y = "Total Scores (Through Week 13)",
+      fill = "Positions",
+      title = "Total Score of Each Position For All Teams",
+      caption = "Data Source: ESPN Fantasy Website",
+      subtitle = str_wrap("Wide receivers (WR) and running backs (RB) consistently dominate in point scoring for each
+                          team, with the quarterback (QB) following closely behind. The FLEX position seems variable
+                          among teams which makes sense as it allows any positional player to be utilized, which is why
+                          most people have either an RB or WR in that spot. Notably, positions such as kicker (K),
+                          defense/special teams (D/ST), and tight end (TE) exhibit relatively consistent performance
+                          across all teams.", width = 87)) +
+  # change theme to linedraw
+  theme_linedraw() + 
+  # edit text
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
+    text = element_text(size = 12),
+    plot.title = element_text(face = "bold", hjust = 0.5)) +
+  # add colors to each position
+  scale_fill_manual(values = paletteer_d("NatParksPalettes::GrandCanyon", 7))
+
+```
+
+Unsurprisingly, RBs and WRs are the most valuable position as they score more than any other position. However, it is worth noting that there are two RB/WR slots in your lineup and only one of every other position. So, if we double a lot of team's QB points one could argue they are the most valuable and score the most points. To me, it seems like positions other than RB, WR, or QB are all relatively similar throughout teams, with only a small variation. If you begin to add more context to this plot, like the fact that Team WN had Travis Kelce (who is easily the best TE and scores a lot more points than other TEs) for the past 8 weeks you see he has a much higher TE total. This is certainly an advantage, however Team WN did use their first round pick on Travis (yes, this is the guy currently dating Taylor Swift).
+
+::: column-margin
+I usually never draft a QB high, with my theory being in a 10 man league there are typically enough "average" QBs to be fine. This year, I decided to draft Joe Burrow much earlier than I usually do and it has come back to bite me in the butt because he has been pitiful. So, lesson learned and I will not be drafting QBs early anymore.
+
+![[Joe Burrow](https://www.nfl.com/players/joe-burrow/stats/career)](data/joe.png){width="200" style="text-align: center;"}
+:::
+
+I added this plot later in the analysis because I found it pretty interesting. Take a look below!
+
+```{r, fig.align='center'}
+# boxplot of scores for my team
+
+data |> 
+  # remove players
+  filter(!PlayerRosterSlot %in% c("Bench", "IR")) |> 
+  # groupby team
+  group_by(TeamName) |> 
+  # init plot
+  ggplot(aes(x = TeamName, y = PlayerScoreActual, fill = TeamName)) +
+  # geom violin
+  geom_violin() +
+  geom_boxplot(width=.1, color="white",outlier.shape = NA) +
+   # add colors
+  scale_fill_manual(values = paletteer_d("ggprism::colors", 12)) +
+  # change to linedraw
+  theme_linedraw() + 
+  # add theme
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
+    text = element_text(size = 12),
+    plot.title = element_text(face = "bold", hjust = 0.5),
+    plot.subtitle = element_text(size = 11)) +
+  # add labels
+  labs(
+    x = "Team Name",
+    y = "Player's Scores (All Weeks)",
+    title = "Distribution of Player Scores for Each Team (Through Week 9)",
+    fill = "Team Name",
+    caption = "Data Source: ESPN Fantasy Website",
+    subtitle = str_wrap("The violin plots display the distribution of all player scores for each team. The boxplots 
+    within expresses the median, interquartile range, and estimated min/max based on the interquartile range. 
+    Notably, Team DH and Team RW have had the best weeks by a player so far this season, while Team WR has had the 
+    worst scores. Most teams exhibit a similar median score, however, Team GM stands out with a noticeably higher
+    median comparatively.", width = 90)) +
+  # get rid of legend
+  guides(fill = "none", color = "none")
+```
+
+We see Team DH and Team RW have had some of the best weeks by a single player so far this season. Since we have such a tight leader board so far, meaning everyone has a fairly similar record, it makes sense that the median of each team is fairly similar. Also, we see some teams like Team WN has less variation within their player scores compared to Team GM and others with a large variation.I'm looking forward to seeing this distribution at the end of the season! Also I should note, this plot is excluding bench players.
+
+Finally, this last graph was made solely for my friends and I so that we can laugh at the thought of who is getting wrecked this year in fantasy. Take a look below for more details 😄
+
+::: callout-warning
+Team TP, you might want to look away for for this one...
+:::
+
+```{r, fig.align='center'}
+# graph for worst loss differential
+
+# grab difference of scores
+matchups_diff = matchups |> 
+  # find difference of scores
+    mutate(Difference = Score1 - Score2)
+
+# get team with lower score
+matchups_diff$LowerScoreName = ifelse(matchups_diff$Difference < 0, matchups_diff$Name1, matchups_diff$Name2)
+
+# get abs of difference and plot
+matchups_diff |> 
+  # absolute the difference 
+  mutate(Difference = abs(Difference)) |> 
+  # group by team
+  group_by(LowerScoreName) |> 
+  # get sum of differences for each team
+  summarise(sum_diff = sum(Difference)) |> 
+  # init plot
+  ggplot(aes(x = LowerScoreName, y = sum_diff, fill = LowerScoreName)) +
+  # geom bar for each team
+  geom_col(position = "dodge") +
+  # add colors
+  scale_fill_manual(values = paletteer_d("ggprism::colors", 12)) +
+  # change to linedraw
+  theme_linedraw() + 
+  # add theme
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), 
+    text = element_text(size = 12),
+    plot.title = element_text(face = "bold", hjust = 0.5)) +
+  # add labels
+  labs(
+    x = "Team Name",
+    y = "Total Loss Differential",
+    title = "Total Loss Differential For Each Team (Through Week 13)",
+    fill = "Team Name",
+    caption = "Data Source: ESPN Fantasy Website",
+    subtitle = str_wrap("It appears that there are four distinct tiers of total loss differential observed thus far in the
+                         season. Noteworthy outliers include Team BD, whose minimal loss differential suggests consistent
+                        performance despite losing games, and Team TP, who consistently experiences significant deficits
+                        in each loss they have.", width = 85)) +
+  # get rid of legend
+  guides(fill = "none")
+
+```
+
+This plot is expressing the worst Loss Differential... so sorry Team TP 😅 It's not looking good for you! One thing to note is this is not counting how much you win, it is solely taking the weeks you lose and finding the differential between you and your opponent's team score.
+
+## Final Thoughts
+
+Ultimately, I had a really fun time doing this analysis and writing this blog! Looking forward to updating the results as the weeks go on, and to see who will be my league's crowned chamption this year 🥳
+
+To summarize a bit of what my analysis consisted of - I analyzed data from my 2023 Fantasy Football League. I found interesting trends in the weekly match-ups, such as typically when a team over-performs they will get the W (but not always) or some teams went through a rough stretch of weeks. I also showed how RBs and WRs are typically the positions that score the most points, with other positions being more team dependent (aka you have the one good TE in the league). Our league is pretty tight this year in terms of rankings, so it was hard to see that a certain trend in the data leads you to be the best team. However, I think as the weeks go on that will certainly become more clear. My goal is to do more of a statistical analysis when the season is complete in order to step up my game for next year's fantasy football season! 😄
+
+**Functions Used**
+
+<!-- At the end of the data analysis, list out each of the functions you used from each of the packages (dplyr, tidyr, and ggplot2) to help the TA with respect to making sure you met all the requirements described above. -->
+
+dplyr/tidyr:
+
+1.  filter: filter rows based on conditions
+2.  select: select specific columns
+3.  summarise: calculate summary statistics
+4.  mutate: create or modify a column
+5.  group_by: group data based on variables
+6.  inner_join: merge two datasets on key values
+
+ggplot2:
+
+1.  geom_line: line plot
+2.  geom_point: points on line plot
+3.  geom_bar: bar plot
+4.  geom_col: column plot
+5.  geom_violin: violin plot
+6.  geom_boxplot: boxplot within violin plot
+
+**References**
+
+[1]
+J. Mannelly, “Analyzing your fantasy football season with python.” https://jman4190.medium.com/analyzing-your-fantasy-football-season-with-python-8c228262eae9.
+
+[2]
+S. Stimson, “Checking ESPN fantasy football projections with python.” https://stmorse.github.io/journal/espn-fantasy-projections.html.
+
+[3]
+ESPN, “Fantasy football for beginners: How to play fantasy football 2022.” https://www.espn.com/fantasy/football/story/_/id/34389554/fantasy-football-beginners-how-play-fantasy-football-2022, 2022.
+
+[4]
+“ESPN fantasy football github.” https://github.com/tbryan2/espnfantasyfootball.
+
+[5]
+“ESPN fantasy football.” https://www.espn.com/fantasy/football/.
 
 
 
