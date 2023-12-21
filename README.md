@@ -1,7 +1,7 @@
-# Project 4
+# Biostat777 Project 4
+
 
 ### Caleb Hallinan
-
 
 
 ## Table of Contents
@@ -14,9 +14,9 @@
 - .gitignore: ignore some files
 - README.md: what you are reading now
 - fantasyfootball.rmd: code and analysis for shiny interactive dashboard
-- references.bib: references for original analysis
+- references.bib: references for original analysis,
 
 
-## Website
+## Dashboard Link
 
-XXX
+https://calebhallinan.shinyapps.io/fantasyfootball/
