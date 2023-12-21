@@ -115,6 +115,7 @@ For the data, I decided to use my football fantasy league of this year (2023). I
 :::
 
 
+
 ### Weekly Player Data
 
 ```{r data_shown, echo=FALSE}
@@ -128,7 +129,11 @@ DT::renderDataTable({
 })
 ```
 
+
+
 ## Column {data-width=500}
+
+
 
 ### Data Dictionary for Weekly Matchup Data {data-height=200}
 
@@ -144,6 +149,8 @@ DT::renderDataTable({
 | Type          | factor    |                Regular season or Playoff game |         Regular          |
 :::
 
+
+
 ### Weekly Matchup Data 
 
 ```{r matchup_shown, echo=FALSE}
@@ -158,9 +165,13 @@ DT::renderDataTable({
 ```
 
 
+
 # Weekly Stats {data-icon="ion-ios-americanfootball-outline" data-orientation=rows}
 
+
+
 ## Column {data-height=500}
+
 
 
 ### Weekly Actual and Projected Scores by Team
@@ -215,6 +226,7 @@ data|>
   legend.position = c(.98, 0), legend.justification = c(1, 0)) +
   scale_x_continuous(breaks = c(2, 4, 6, 8,10,12, 14))
 ```
+
 
 
 ### Weekly Average Score Compared to You and Your Opponent's Score
@@ -330,6 +342,8 @@ data |>
 
 # Scores Over Time {data-icon="ion-flag" data-orientation=rows}
 
+
+
 ## {data-height=1000}
 
 ```{r}
@@ -379,6 +393,7 @@ data |>
 ```
 
 
+
 ## Column {.sidebar} {data-height=200}
 
 ```{r slider input, message = FALSE, warning = FALSE}
@@ -388,10 +403,13 @@ sliderInput("Week", label = "Number of Weeks to Include:",
 
 
 
-
 # Best/Worst Performing Players {data-icon="fa-medal" data-orientation=rows}
 
+
+
 ## {data-height=1500}
+
+
 
 ### {data-height="100" data-orientation=columns}
 
@@ -456,6 +474,7 @@ ggplot(data = data_players_final_2, aes(x = playerscoredifference.x, y = fct_reo
 ```
 
 
+
 ### {data-height="100" data-orientation=columns}
 
 ```{r, fig.height=8, fig.width=9, fig.align='center'}
@@ -517,7 +536,11 @@ ggplot(data = data_players_final, aes(x = playerscoredifference.x, y = fct_reord
 })
 ```
 
+
+
 ##
+
+
 
 ### 
 
@@ -533,7 +556,7 @@ selectInput("position", "Position Selection:",
 # Analysis {data-icon="ion-ios-pie"}
 
 
-
+<!-- Will add analysis of fantasy football here  -->
 
 
 
